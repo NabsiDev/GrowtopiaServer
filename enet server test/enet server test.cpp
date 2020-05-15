@@ -2677,7 +2677,7 @@ void loadConfig() {
 	*/
 	
 	
-	std::ifstream ifs("config.json");
+		std::ifstream ifs("config.json");
 	if (ifs.is_open()) {
 		json j;
 		ifs >> j;
@@ -2688,10 +2688,32 @@ void loadConfig() {
 			
 			cout << "Config loaded." << endl;
 		} catch (...) {
-			cout << "Invalid config." << endl;
+			cout << "Invalid config, Fixing..." << endl;
+			string open = "{";
+			string space = "\n";
+			string one = "'port': 17091,";
+			string two = "'cdn': '0098/CDNContent60/cache/'";
+			string close = "}";
+
+			ofstream myfile;
+			myfile.open("config.json");
+			myfile << open + space + one + space + two + space + close;
+			myfile.close();
+			cout << "Config Has Been Fixed! Please Reopen This Application";
 		}
 	} else {
-		cout << "Config not found." << endl;
+		cout << "Config not found, Creating..." << endl;
+		string open = "{";
+		string space = "\n";
+		string one = "'port': 17091,";
+		string two = "'cdn': '0098/CDNContent61/cache/'";
+		string close = "}";
+
+		ofstream myfile1;
+		myfile1.open("config.json");
+		myfile1 << open + space + one + space + two + space + close;
+		myfile1.close();
+		cout << "Config Has Been Created! Please Reopen This Application";
 	}
 }
 
