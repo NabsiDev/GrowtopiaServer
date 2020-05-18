@@ -2677,7 +2677,7 @@ void loadConfig() {
 	*/
 	
 	
-		std::ifstream ifs("config.json");
+			std::ifstream ifs("config.json");
 	if (ifs.is_open()) {
 		json j;
 		ifs >> j;
@@ -2688,32 +2688,56 @@ void loadConfig() {
 			
 			cout << "Config loaded." << endl;
 		} catch (...) {
-			cout << "Invalid config, Fixing..." << endl;
+			cout << "Invalid Config, Fixing..." << endl;
 			string open = "{";
 			string space = "\n";
-			string one = "'port': 17091,";
-			string two = "'cdn': '0098/CDNContent60/cache/'";
+			string port = "port";
+			string port1 = ": 17091,";
+			string cdn = "cdn";
+			char t2 = ':';
+			string cdn1 = "0098/CDNContent61/cache/";
 			string close = "}";
+			char a = '"';
 
-			ofstream myfile;
-			myfile.open("config.json");
-			myfile << open + space + one + space + two + space + close;
-			myfile.close();
-			cout << "Config Has Been Fixed! Please Reopen This Application";
+			ofstream myfile1;
+			myfile1.open("config.json");
+			myfile1 << open + space + a + port + a + port1 + space + a + cdn + a + t2 + a + cdn1 + a + space + close;
+			myfile1.close();
+			cout << "Config Has Been Fixed! Reloading..." << endl;
+			std::ifstream ifs("config.json");
+			json j;
+			ifs >> j;
+			ifs.close();
+				configPort = j["port"].get<int>();
+				configCDN = j["cdn"].get<string>();
+
+				cout << "Config loaded." << endl;
 		}
 	} else {
 		cout << "Config not found, Creating..." << endl;
 		string open = "{";
 		string space = "\n";
-		string one = "'port': 17091,";
-		string two = "'cdn': '0098/CDNContent61/cache/'";
+		string port = "port";
+		string port1 = ": 17091,";
+		string cdn = "cdn";
+		char t2 = ':';
+		string cdn1 = "0098/CDNContent61/cache/";
 		string close = "}";
+		char a = '"';
 
 		ofstream myfile1;
 		myfile1.open("config.json");
-		myfile1 << open + space + one + space + two + space + close;
+		myfile1 << open + space + a + port + a + port1 + space + a + cdn + a + t2 + a + cdn1 + a + space + close;
 		myfile1.close();
-		cout << "Config Has Been Created! Please Reopen This Application";
+		cout << "Config Has Been Created! Reloading..." << endl;
+		std::ifstream ifs("config.json");
+		json j;
+		ifs >> j;
+		ifs.close();
+			configPort = j["port"].get<int>();
+			configCDN = j["cdn"].get<string>();
+
+			cout << "Config loaded." << endl;
 	}
 }
 
