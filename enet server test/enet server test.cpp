@@ -327,7 +327,6 @@ struct GamePacket
 	int indexes;
 };
 
-
 GamePacket appendFloat(GamePacket p, float val)
 {
 	//p.data[56] += 1;
@@ -423,18 +422,21 @@ GamePacket appendString(GamePacket p, string str)
 	return p;
 }
 
-GamePacket createPacket()
+GamePacket createPacket(int delay = 0, int NetID = -1)
 {
 	BYTE* data = new BYTE[61];
-	string asdf = "0400000001000000FFFFFFFF00000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-	for (int i = 0; i < asdf.length(); i += 2)
-	{
-		char x = ch2n(asdf[i]);
-		x = x << 4;
-		x += ch2n(asdf[i + 1]);
-		memcpy(data + (i / 2), &x, 1);
-		if (asdf.length() > 61 * 2) throw 0;
-	}
+
+	int MessageType = 0x4;
+	int PacketType = 0x1;
+	int CharState = 0x8;
+
+	memset(data, 0, 61);
+	memcpy(data, &MessageType, 4);
+	memcpy(data + 4, &PacketType, 4);
+	memcpy(data + 8, &NetID, 4);
+	memcpy(data + 16, &CharState, 4);
+	memcpy(data + 24, &delay, 4);
+
 	GamePacket packet;
 	packet.data = data;
 	packet.len = 61;
@@ -1286,15 +1288,16 @@ void buildItemsDatabase()
 	if (file.read((char*)(data), size))
 	{
 		itemsDat = new BYTE[60 + size];
-		string asdf = "0400000010000000FFFFFFFF000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-		for (int i = 0; i < asdf.length(); i += 2)
-		{
-			char x = ch2n(asdf[i]);
-			x = x << 4;
-			x += ch2n(asdf[i + 1]);
-			memcpy(itemsDat + (i / 2), &x, 1);
-			if (asdf.length() > 60 * 2) throw 0;
-		}
+		int MessageType = 0x4;
+		int PacketType = 0x10;
+		int NetID = -1;
+		int CharState = 0x8;
+
+		memset(itemsDat, 0, 60);
+		memcpy(itemsDat, &MessageType, 4);
+		memcpy(itemsDat + 4, &PacketType, 4);
+		memcpy(itemsDat + 8, &NetID, 4);
+		memcpy(itemsDat + 16, &CharState, 4);
 		memcpy(itemsDat + 56, &size, 4);
 		file.seekg(0, std::ios::beg);
 		if (file.read((char*)(itemsDat + 60), size))
@@ -1661,21 +1664,23 @@ bool isHere(ENetPeer* peer, ENetPeer* peer2)
 
 void sendInventory(ENetPeer* peer, PlayerInventory inventory)
 {
-	string asdf2 = "0400000009A7379237BB2509E8E0EC04F8720B050000000000000000FBBB0000010000007D920100FDFDFDFD04000000040000000000000000000000000000000000";
 	int inventoryLen = inventory.items.size();
-	int packetLen = (asdf2.length() / 2) + (inventoryLen * 4) + 4;
+	int packetLen = 66 + (inventoryLen * 4) + 4;
 	BYTE* data2 = new BYTE[packetLen];
-	for (int i = 0; i < asdf2.length(); i += 2)
-	{
-		char x = ch2n(asdf2[i]);
-		x = x << 4;
-		x += ch2n(asdf2[i + 1]);
-		memcpy(data2 + (i / 2), &x, 1);
-	}
+	int MessageType = 0x4;
+	int PacketType = 0x9;
+	int NetID = -1;
+	int CharState = 0x8;
+
+	memset(data2, 0, packetLen);
+	memcpy(data2, &MessageType, 4);
+	memcpy(data2 + 4, &PacketType, 4);
+	memcpy(data2 + 8, &NetID, 4);
+	memcpy(data2 + 16, &CharState, 4);
 	int endianInvVal = _byteswap_ulong(inventoryLen);
-	memcpy(data2 + (asdf2.length() / 2) - 4, &endianInvVal, 4);
+	memcpy(data2 + 66 - 4, &endianInvVal, 4);
 	endianInvVal = _byteswap_ulong(inventory.inventorySize);
-	memcpy(data2 + (asdf2.length() / 2) - 8, &endianInvVal, 4);
+	memcpy(data2 + 66 - 8, &endianInvVal, 4);
 	int val = 0;
 	for (int i = 0; i < inventoryLen; i++)
 	{
@@ -1684,14 +1689,13 @@ void sendInventory(ENetPeer* peer, PlayerInventory inventory)
 		val |= inventory.items.at(i).itemCount << 16;
 		val &= 0x00FFFFFF;
 		val |= 0x00 << 24;
-		memcpy(data2 + (i*4) + (asdf2.length() / 2), &val, 4);
+		memcpy(data2 + (i * 4) + 66, &val, 4);
 	}
-	ENetPacket * packet3 = enet_packet_create(data2,
+	ENetPacket* packet3 = enet_packet_create(data2,
 		packetLen,
 		ENET_PACKET_FLAG_RELIABLE);
 	enet_peer_send(peer, 0, packet3);
 	delete data2;
-	//enet_host_flush(server);
 }
 
 BYTE* packPlayerMoving(PlayerMoving* dataStruct)
@@ -2826,44 +2830,9 @@ label|Download Latest Version
 				cout << "packet drop" << endl;
 				continue;
 			}
-			/*printf("A packet of length %u containing %s was received from %s on channel %u.\n",
-				event.packet->dataLength,
-				event.packet->data,
-				event.peer->data,
-				event.channelID);
-			cout << (int)*event.packet->data << endl;*/
-			//cout << text_encode(getPacketData((char*)event.packet->data));
-			/*for (int i = 0; i < event.packet->dataLength; i++)
-			{
-				cout << event.packet->data[i];
-			}
-			sendData(7, 0, 0);
-			string x = "eventType|0\neventName|102_PLAYER.AUTHENTICATION\nAuthenticated|0\nAuthentication_error|6\nDevice_Id|^^\nGrow_Id|0\nName|^^Elektronik\nWordlock_balance|0\n";
-			//string x = "eventType | 0\neventName | 102_PLAYER.AUTHENTICATION\nAuthenticated | 0\nAuthentication_error | 6\nDevice_Id | ^^\nGrow_Id | 0\nName | ^^Elektronik\nWorldlock_balance | 0\n";
-			sendData(6, (char*)x.c_str(), x.length());
-			string y = "action|quit\n";
-			sendData(3, (char*)y.c_str(), y.length());
-			cout << endl;
-			string asdf = "0400000001000000FFFFFFFF0000000008000000000000000000000000000000000000000000000000000000000000000000000000000000400000000600020E0000004F6E53656E64546F5365727665720109ED4200000209834CED00030910887F0104020D0000003230392E35392E3139302E347C05090100000000C";
-			//asdf = "0400000001000000FFFFFFFF000000000800000000000000000000000000000000000000000000000000000000000000000000000000000040000000060002220000004F6E53757065724D61696E53746172744163636570744C6F676F6E464232313131330109ED4200000209834CED00030910887F0104020D0000003230392E35392E3139302E347C05090100000000C";
-			ENetPacket * packet = enet_packet_create(0,
-				asdf.length()/2,
-				ENET_PACKET_FLAG_RELIABLE);
-			for (int i = 0; i < asdf.length(); i += 2)
-			{
-				char x = ch2n(asdf[i]);
-				x = x << 4;
-				x += ch2n(asdf[i + 1]);
-				memcpy(packet->data + (i / 2), &x, 1);
-			}
-			enet_peer_send(peer, 0, packet);
-			enet_host_flush(server);
-			/* Clean up the packet now that we're done using it. */
-			//enet_packet_destroy(event.packet);
-			//sendData(7, 0, 0);
+
 			int messageType = GetMessageTypeFromPacket(event.packet);
-			//cout << "Packet type is " << messageType << endl;
-			//cout << (event->packet->data+4) << endl;
+
 			WorldInfo* world = getPlyersWorld(peer);
 			switch (messageType) {
 			case 2:
@@ -3996,46 +3965,6 @@ label|Download Latest Version
 							} else {
 								WorldInfo info = worldDB.get(act);
 								sendWorld(peer, &info);
-								/*string asdf = "0400000004A7379237BB2509E8E0EC04F8720B050000000000000000FBBB0000010000007D920100FDFDFDFD04000000040000000000000000000000070000000000"; // 0400000004A7379237BB2509E8E0EC04F8720B050000000000000000FBBB0000010000007D920100FDFDFDFD04000000040000000000000000000000080000000000000000000000000000000000000000000000000000000000000048133A0500000000BEBB0000070000000000
-								string worldName = "TEST";
-								int xSize=100;
-								int ySize=60;
-								int square = xSize*ySize;
-								__int16 nameLen = worldName.length();
-								int payloadLen = asdf.length() / 2;
-								int dataLen = payloadLen + 2 + nameLen + 12 + (square * 8)+4;
-								BYTE* data = new BYTE[dataLen];
-								for (int i = 0; i < asdf.length(); i += 2)
-								{
-								char x = ch2n(asdf[i]);
-								x = x << 4;
-								x += ch2n(asdf[i + 1]);
-								memcpy(data + (i / 2), &x, 1);
-								}
-								int zero = 0;
-								__int16 item = 0;
-								int smth = 0;
-								for (int i = 0; i < square * 8; i += 4) memcpy(data + payloadLen + i + 14 + nameLen, &zero, 4);
-								for (int i = 0; i < square * 8; i += 8) memcpy(data + payloadLen + i + 14 + nameLen, &item, 2);
-								memcpy(data + payloadLen, &nameLen, 2);
-								memcpy(data + payloadLen + 2, worldName.c_str(), nameLen);
-								memcpy(data + payloadLen + 2 + nameLen, &xSize, 4);
-								memcpy(data + payloadLen + 6 + nameLen, &ySize, 4);
-								memcpy(data + payloadLen + 10 + nameLen, &square, 4);
-								for (int i = 0; i < 1700; i++) {
-								__int16 bed = 100;
-								memcpy(data + payloadLen + (i * 8) + 14 + nameLen + (8 * 100 * 37), &bed, 2);
-								}
-								for (int i = 0; i < 600; i++) {
-								__int16 bed = 8;
-								memcpy(data + payloadLen + (i*8) + 14 + nameLen + (8*100*54), &bed, 2);
-								}
-								memcpy(data + dataLen-4, &smth, 4);
-								ENetPacket * packet2 = enet_packet_create(data,
-								dataLen,
-								ENET_PACKET_FLAG_RELIABLE);
-								enet_peer_send(peer, 0, packet2);
-								enet_host_flush(server);*/
 
 								int x = 3040;
 								int y = 736;
@@ -4054,30 +3983,10 @@ label|Download Latest Version
 
 								sendInventory(peer, ((PlayerInfo*)(event.peer->data))->inventory);
 
-
-
-								/*int resx = 95;
-								int resy = 23;*/
-
-								/*for (int i = 0; i < world.width*world.height; i++)
-								{
-								if (world.items[i].foreground == 6) {
-								resx = i%world.width;
-								resy = i / world.width;
-								}
-								}
-
-								GamePacket p2 = packetEnd(appendInt(appendString(createPacket(), "SetRespawnPos"), resx + (world.width*resy)));
-								memcpy(p2.data + 8, &(((PlayerInfo*)(event.peer->data))->netID), 4);
-								ENetPacket * packet2 = enet_packet_create(p2.data,
-								p2.len,
-								ENET_PACKET_FLAG_RELIABLE);
-								enet_peer_send(peer, 0, packet);
-								enet_host_flush(server);*/
-                                                                if (((PlayerInfo*)(peer->data))->taped) {
-                                                                ((PlayerInfo*)(peer->data))->isDuctaped = true;
-                                                                sendState(peer);
-                                                                }
+                                 if (((PlayerInfo*)(peer->data))->taped) {
+									 ((PlayerInfo*)(peer->data))->isDuctaped = true;
+									 sendState(peer);
+								 }
 							}
 						}
 						catch (int e) {
