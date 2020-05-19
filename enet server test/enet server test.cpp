@@ -325,8 +325,6 @@ struct GamePacket
 	BYTE* data;
 	int len;
 	int indexes;
-	int NetID = -1;
-	int delay = 0;
 };
 
 GamePacket appendFloat(GamePacket p, float val)
@@ -424,9 +422,8 @@ GamePacket appendString(GamePacket p, string str)
 	return p;
 }
 
-GamePacket createPacket()
+GamePacket createPacket(int delay = 0, int NetID = -1)
 {
-	GamePacket packet;
 	BYTE* data = new BYTE[61];
 
 	int MessageType = 0x4;
@@ -436,10 +433,11 @@ GamePacket createPacket()
 	memset(data, 0, 61);
 	memcpy(data, &MessageType, 4);
 	memcpy(data + 4, &PacketType, 4);
-	memcpy(data + 8, &packet.NetID, 4);
+	memcpy(data + 8, &NetID, 4);
 	memcpy(data + 16, &CharState, 4);
-	memcpy(data + 24, &packet.delay, 4);
+	memcpy(data + 24, &delay, 4);
 
+	GamePacket packet;
 	packet.data = data;
 	packet.len = 61;
 	packet.indexes = 0;
