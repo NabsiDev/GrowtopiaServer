@@ -5,7 +5,8 @@
 - Xampp or nginx but this tutorial is for Xampp (Apache)
 
 Download Xampp here : [Click here to download Xampp](https://www.apachefriends.org/xampp-files/7.4.6/xampp-windows-x64-7.4.6-0-VC15-installer.exe)
-**Steps: **
+
+**Steps:**
 1. locate path C:\xampp\htdocs\
 
 2. create new folder called "Growtopia"
@@ -33,14 +34,14 @@ RTENDMARKERBS1001
 
 **Notice if you are using vps (Virtual Private Server) you have to disable firewall to make the connection work**
 
-###Setup Server
+### Setup Server
 
 - Depencies
 - Visual Studio 2015 or Newer.
 - Basic knowledge of using Visual Studio
 - GrowtopiaServer files.
 
-**Steps: **
+**Steps:**
 1. Download or clone GrowtopiaServer Reposition (https://github.com/GrowtopiaNoobs/GrowtopiaServer.git)
 
 2. Download Visual Studio 2015 or Newer (you can skip this step if you alrdy have it
@@ -58,7 +59,7 @@ RTENDMARKERBS1001
 
 ### How to Join into your server.
 
-**Steps :**
+**Steps:**
 
 **Android:**
 1. Create Hosts file on your computer or vps
@@ -79,7 +80,7 @@ RTENDMARKERBS1001
 
 7. Connect to Growtopia
 
-**Windows: **
+**Windows:**
 1. Press WINDOWS + R
 
 2. Open notepad as administrator
